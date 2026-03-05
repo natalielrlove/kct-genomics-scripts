@@ -1,27 +1,7 @@
-# Large data files
-*.fastq
-*.fq
-*.fq.gz
-*.fastq.gz
-*.bam
-*.bam.bai
-*.sam
-*.vcf
-*.vcf.gz
-*.bcf
-*.fa
-*.fasta
-*.fna
-
-# Logs and temp files
-*.log
-*.tmp
-*.temp
+# SLURM job logs (land in submission directory)
 slurm-*.out
+*.log
 *.err
-
-# Results/outputs (kept in output_files/, not in repo)
-output_files/
 
 # OS files
 .DS_Store

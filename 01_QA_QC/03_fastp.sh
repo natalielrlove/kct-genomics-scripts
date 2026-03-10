@@ -23,7 +23,7 @@ for r1 in "$IN"/*_1.fq.gz; do
     --detect_adapter_for_pe \
     --qualified_quality_phred 20 \
     --length_required 50 \
-    --thread 6 \
+    --thread 20 \
     --html "$OUT/html/${base}.fastp.html" \
     --json "$OUT/json/${base}.fastp.json"
 done

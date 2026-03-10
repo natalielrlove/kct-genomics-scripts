@@ -8,6 +8,4 @@ THREADS=20
 
 mkdir -p "$OUT"
 
-for f in "$IN"/*.fq.gz; do
-  fastqc -t "$THREADS" -o "$OUT" "$f"
-done
+fastqc -t "$THREADS" -o "$OUT" "$IN"/*.fq.gz

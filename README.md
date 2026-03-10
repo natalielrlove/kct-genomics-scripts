@@ -5,9 +5,12 @@ Analysis scripts for *Gymnocladus dioicus* population genomics.
 ## Repository structure
 
 ```
-scripts/
+kct-genomics-scripts/
 ├── 00_file_organization/    # File organization and setup
-├── 01_probe_validation/     # In silico probe validation (hyb-seq)
+├── 01_QA_QC/                # Read quality assessment and trimming
+│   ├── 01_fastqc.sh         # Per-sample quality reports (FastQC)
+│   ├── 02_multiqc.sh        # Aggregate FastQC reports (MultiQC)
+│   └── 03_fastp.sh          # Adapter trimming and filtering (fastp)
 └── README.md
 ```
 

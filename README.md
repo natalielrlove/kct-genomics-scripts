@@ -11,6 +11,8 @@ kct-genomics-scripts/
 │   ├── 01_fastqc.sh         # Per-sample quality reports (FastQC)
 │   ├── 02_multiqc.sh        # Aggregate FastQC reports (MultiQC)
 │   └── 03_fastp.sh          # Adapter trimming and filtering (fastp)
+├── 02_mapping/              # Alignment to reference genome
+│   └── 04_bwamem.sh         # Paired-end alignment with bwa-mem2 (2 parallel jobs, 15 threads each)
 └── README.md
 ```
 

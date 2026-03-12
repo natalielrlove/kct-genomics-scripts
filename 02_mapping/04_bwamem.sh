@@ -16,6 +16,7 @@
 #   - Each job uses 15 CPU threads for alignment (threads_bwa=15)
 #   - Each job uses 2 CPU threads for sorting (threads_sort=2)
 #   - Total CPU usage: 2 × (15 + 2) = 34 cores
+#   - Each job loads the reference index independently (~19 GB each, ~38 GB total)
 #
 # Resume behavior:
 #   - If a sorted BAM already exists for a sample, that sample
@@ -56,19 +57,6 @@ parallel_jobs=2   # Number of samples to process at the same time
 # stats/ = per-sample flagstat alignment summary files
 # logs/  = per-sample bwa-mem2 log files (useful for debugging)
 mkdir -p "$OUT"/{bam,stats,logs}
-
-# --- Load reference genome into shared memory ----------------
-# bwa-mem2 normally loads the reference index from disk for every
-# sample. With "shm", it loads it into RAM once and all parallel
-# jobs share the same copy — this saves time and memory.
-echo "Loading reference genome into shared memory..."
-bwa-mem2 shm "$REF"
-
-# --- Clean up shared memory when the script finishes ---------
-# The "trap" command ensures shared memory is released when the
-# script exits (whether it finishes normally or crashes).
-# Without this, the reference would stay loaded in RAM indefinitely.
-trap 'echo "Releasing shared memory..."; bwa-mem2 shm -d "$REF"' EXIT
 
 # --- Define the function that processes one sample -----------
 # GNU parallel will call this function once per sample.

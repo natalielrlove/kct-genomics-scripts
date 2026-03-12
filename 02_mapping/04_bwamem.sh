@@ -33,7 +33,7 @@ set -euo pipefail
 
 # --- Activate conda environment ------------------------------
 # The "mapping" environment contains bwa-mem2, samtools, and parallel
-source ~/miniconda3/etc/profile.d/conda.sh
+source /home/nlove/miniconda3/etc/profile.d/conda.sh
 conda activate mapping
 
 # --- Directory paths -----------------------------------------

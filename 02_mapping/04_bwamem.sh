@@ -94,6 +94,15 @@ process_sample() {
   local threads_bwa="$4"
   local threads_sort="$5"
 
+  # --- Undetermined skip check --------------------------------
+  # Undetermined files contain reads that couldn't be assigned to
+  # any sample during demultiplexing — they are not real samples
+  # and should not be aligned to the reference genome.
+  if [[ "$sample" == Undetermined* ]]; then
+    echo "Skipping $sample — Undetermined reads, not a real sample"
+    return 0
+  fi
+
   # --- Resume/skip check -------------------------------------
   # If a sorted BAM already exists for this sample, skip it.
   # This allows the script to be safely re-run after interruption

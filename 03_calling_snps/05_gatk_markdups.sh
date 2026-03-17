@@ -47,10 +47,10 @@
 #   {sample}.markdup.log : GATK log for MarkDuplicates
 #
 # Parallelism:
-#   - 5 samples processed simultaneously (parallel_jobs=5)
+#   - 10 samples processed simultaneously (parallel_jobs=10)
 #   - MarkDuplicates is mostly single-threaded but memory-heavy
-#   - Each job uses up to 8 GB RAM → 5 jobs = ~40 GB RAM total
-#   - Total CPU: ~5 cores (one per job, GATK does not multithread here)
+#   - Each job uses up to 8 GB RAM → 10 jobs = ~80 GB RAM total
+#   - Total CPU: ~10 cores (one per job, GATK does not multithread here)
 #
 # Resume behavior:
 #   - If a .md.bam already exists for a sample, that sample is
@@ -77,9 +77,9 @@ IN="/home/nlove/kct_genomics/output_files/bwa_mem2_hap1/bam"
 OUT="/home/nlove/kct_genomics/output_files/gatk_preproc"
 
 # --- Parallelism settings ------------------------------------
-parallel_jobs=5   # Number of samples to process at the same time.
+parallel_jobs=10  # Number of samples to process at the same time.
                   # MarkDuplicates is memory-intensive (~8 GB/job).
-                  # 5 jobs × 8 GB = ~40 GB RAM. Increase if you have
+                  # 10 jobs × 8 GB = ~80 GB RAM. Increase if you have
                   # headroom, decrease if jobs crash with memory errors.
 
 # --- Create output directories if they don't already exist ---

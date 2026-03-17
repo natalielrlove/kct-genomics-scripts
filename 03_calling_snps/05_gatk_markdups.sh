@@ -65,9 +65,12 @@
 set -euo pipefail
 
 # --- Activate conda environment ------------------------------
-# The "gatk" environment contains GATK4 and samtools
-source /home/nlove/miniconda3/etc/profile.d/conda.sh
-conda activate gatk
+# The "gatk" environment contains GATK4 and samtools.
+# Activate manually before running this script:
+#   source /home/nlove/miniconda3/etc/profile.d/conda.sh
+#   conda activate gatk
+# source /home/nlove/miniconda3/etc/profile.d/conda.sh
+# conda activate gatk
 
 # --- Directory paths -----------------------------------------
 # Input: sorted BAM files produced by 04_bwamem.sh

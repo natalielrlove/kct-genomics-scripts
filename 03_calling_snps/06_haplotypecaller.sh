@@ -17,8 +17,8 @@
 #     the reference allele was actually observed there)
 #
 # This "evidence at every site" format is required for the
-# next step: joint genotyping across all 10 populations
-# together (GenomicsDBImport + GenotypeGVCFs, scripts 07-08).
+# next step: joint genotyping across all samples together
+# (GenomicsDBImport + GenotypeGVCFs, scripts 07-08).
 # Joint genotyping is more accurate than calling each sample
 # independently because it uses information from all samples
 # to distinguish true rare variants from sequencing errors.
@@ -34,7 +34,7 @@
 #
 # Runtime note:
 #   HaplotypeCaller is the slowest step in this pipeline.
-#   Expect ~8 hours per sample on a single thread. With 10 samples
+#   Expect ~8 hours per sample on a single thread. With all samples
 #   running in parallel at 3 threads each, total wall time is
 #   reduced to ~8 hours for all samples at once (using 30 cores).
 #
@@ -58,9 +58,12 @@
 set -euo pipefail
 
 # --- Activate conda environment ------------------------------
-# The "gatk" environment contains GATK4
-source /home/nlove/miniconda3/etc/profile.d/conda.sh
-conda activate gatk
+# The "gatk" environment contains GATK4.
+# Activate manually before running this script:
+#   source /home/nlove/miniconda3/etc/profile.d/conda.sh
+#   conda activate gatk
+# source /home/nlove/miniconda3/etc/profile.d/conda.sh
+# conda activate gatk
 
 # --- Directory paths -----------------------------------------
 # Reference genome (haplotype 1) — same reference used in script 04

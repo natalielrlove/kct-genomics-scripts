@@ -6,7 +6,7 @@
 # 06_haplotypecaller.sh and combines them into a single raw
 # multi-sample VCF through two sequential steps:
 #
-#   Step 1 — Generate a sample map (input list for GATK)
+#   Step 1 — Generate a sample map (input list of samples for GATK; look up table)
 #   Step 2 — Generate an interval list from the reference index
 #   Step 3 — GenomicsDBImport: load all 61 gVCFs into a database
 #   Step 4 — GenotypeGVCFs: query the database to produce the final VCF
@@ -65,8 +65,7 @@
 # - GenotypeGVCFs: skipped if the output VCF already exists.
 #
 # Requirements: conda environment "gatk" must be active
-#   source /home/nlove/miniconda3/etc/profile.d/conda.sh
-#   conda activate gatk
+#  see below
 # ============================================================
 
 # Exit immediately if any command fails, if an unset variable
@@ -78,8 +77,7 @@ set -euo pipefail
 # Activate manually before running this script:
 #   source /home/nlove/miniconda3/etc/profile.d/conda.sh
 #   conda activate gatk
-# source /home/nlove/miniconda3/etc/profile.d/conda.sh
-# conda activate gatk
+
 
 # --- Directory paths -----------------------------------------
 # Reference genome (haplotype 1) — same reference used throughout pipeline
@@ -165,7 +163,7 @@ echo "=== Step 3: GenomicsDBImport ===" | tee -a "$LOG"
 echo "Started: $(date)" | tee -a "$LOG"
 
 # Resume check: GenomicsDBImport will fail if the workspace directory
-# already exists. Exit early with a helpful message rather than
+# already exists (returns TRUE). Exit early with a helpful message rather than
 # letting GATK fail cryptically.
 if [[ -d "$WORKSPACE" ]]; then
     echo "ERROR: GenomicsDB workspace already exists at:" | tee -a "$LOG"
@@ -176,7 +174,7 @@ if [[ -d "$WORKSPACE" ]]; then
     exit 1
 fi
 
-gatk --java-options "-Xmx32g -Djava.io.tmpdir=$OUT/tmp" GenomicsDBImport \
+gatk --java-options "-Xmx64g -Djava.io.tmpdir=$OUT/tmp" GenomicsDBImport \
     --sample-name-map "$SAMPLE_MAP" \
     --genomicsdb-workspace-path "$WORKSPACE" \
     -L "$INTERVALS" \
@@ -185,10 +183,11 @@ gatk --java-options "-Xmx32g -Djava.io.tmpdir=$OUT/tmp" GenomicsDBImport \
     --tmp-dir "$OUT/tmp" \
     2>&1 | tee -a "$LOG"
 #
-# --java-options "-Xmx32g"
-#   Allow Java to use up to 32 GB RAM. GenomicsDBImport holds data
+# --java-options "-Xmx64g"
+#   Allow Java to use up to 64 GB RAM. GenomicsDBImport holds data
 #   from all 61 samples in memory during import — more than
-#   HaplotypeCaller needed per sample.
+#   HaplotypeCaller needed per sample. Curie has 481 GB available
+#   so 64 GB is conservative but comfortable.
 #
 # --sample-name-map
 #   The tab-separated file from Step 1, mapping each sample name
@@ -248,14 +247,14 @@ if [[ -f "$RAW_VCF" ]]; then
     exit 0
 fi
 
-gatk --java-options "-Xmx32g -Djava.io.tmpdir=$OUT/tmp" GenotypeGVCFs \
+gatk --java-options "-Xmx64g -Djava.io.tmpdir=$OUT/tmp" GenotypeGVCFs \
     -R "$REF" \
     -V "gendb://$WORKSPACE" \
     -O "$RAW_VCF" \
     --tmp-dir "$OUT/tmp" \
     2>&1 | tee -a "$LOG"
 #
-# --java-options "-Xmx32g"
+# --java-options "-Xmx64g"
 #   GenotypeGVCFs also needs substantial memory — it reads the
 #   entire database and computes likelihoods across all 61 samples.
 #

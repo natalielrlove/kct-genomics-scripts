@@ -2,6 +2,10 @@
 # ============================================================
 # 03_fastp.sh — Adapter trimming and quality filtering
 # ============================================================
+# Requirements: conda environment "qc" must be active
+#   (contains fastqc, fastp, multiqc)
+#   source /home/nlove/miniconda3/etc/profile.d/conda.sh
+#   conda activate qc
 # This script runs fastp on all raw paired-end FASTQ files.
 # fastp does two things:
 #   1. Removes adapter sequences from the ends of reads

@@ -32,6 +32,20 @@ kct-genomics-scripts/
 Scripts are run on the Curie server. Clone this repo to `~/kct_genomics/scripts/`.
 Push changes from local machine, pull on server to run.
 
+## Reference genome assembly stats
+
+Reference: `Gymnocladus_dioicus_M_hap1.fa` (Haplotype 1, 986 sequences)
+
+| Sequence type | Count | Total bp | % of genome |
+|---|---|---|---|
+| Chromosomes (`chr*`) | 86 | 659,219,136 | ~93% |
+| Unplaced scaffolds (`scaffold_*`) | 900 | 51,323,761 | ~7% |
+| **Total** | **986** | **710,542,897** | |
+
+Scaffold sizes range from ~660 kb (largest) to ~25 kb (smallest), averaging ~57 kb.
+For probe design: consider excluding unplaced scaffolds entirely or setting a minimum
+size cutoff (e.g. >100 kb) to avoid repetitive/low-complexity regions.
+
 ## Pipeline run log
 
 | Script | Start | End | Wall time | Notes |

@@ -66,7 +66,7 @@ Reference: `Gymnocladus_dioicus_M_hap1.fa` (Haplotype 1, 986 sequences)
 
 | Sequence type | Count | Total bp | % of genome |
 |---|---|---|---|
-| Chromosomes (`chr*`) | 86 | 659,219,136 | ~93% |
+| Chromosomes (`chr*`) | 14 | 659,219,136 | ~93% |
 | Unplaced scaffolds (`scaffold_*`) | 900 | 51,323,761 | ~7% |
 | **Total** | **986** | **710,542,897** | |
 

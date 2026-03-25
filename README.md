@@ -31,3 +31,9 @@ kct-genomics-scripts/
 ## Server
 Scripts are run on the Curie server. Clone this repo to `~/kct_genomics/scripts/`.
 Push changes from local machine, pull on server to run.
+
+## Pipeline run log
+
+| Script | Start | End | Wall time | Notes |
+|--------|-------|-----|-----------|-------|
+| `06_haplotypecaller.sh` | 2026-03-18 ~16:00 PDT | 2026-03-23 ~16:25 PDT | ~120 h | 61 samples, 10 parallel jobs × 3 threads, Hap 1 reference (986 scaffolds); all 61 GVCFs + .tbi produced, no errors |

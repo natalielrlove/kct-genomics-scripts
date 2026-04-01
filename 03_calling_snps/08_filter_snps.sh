@@ -43,9 +43,14 @@
 #
 # HARD FILTER THRESHOLDS (GATK recommended for SNPs)
 # ---------------------------------------------------
-# QD  < 2.0    QualByDepth: variant quality divided by depth.
+# QD   < 2.0   QualByDepth: variant quality divided by depth.
 #              Low QD means the variant call is weak relative to
 #              how many reads support it — likely a low-confidence call.
+#
+# QUAL < 30.0  Phred-scaled confidence that the variant exists at this site.
+#              QUAL 30 = 1-in-1000 error probability. Low QUAL means GATK
+#              has weak overall confidence the variant is real, independent
+#              of read depth (unlike QD).
 #
 # FS  > 60.0   FisherStrand: strand bias measured by Fisher's exact test.
 #              High FS means the variant is seen predominantly on one
@@ -189,6 +194,7 @@ else
         -V "$SNP_VCF" \
         -O "$TAGGED_VCF" \
         --filter-expression "QD < 2.0"            --filter-name "QD2" \
+        --filter-expression "QUAL < 30.0"         --filter-name "QUAL30" \
         --filter-expression "FS > 60.0"           --filter-name "FS60" \
         --filter-expression "SOR > 3.0"           --filter-name "SOR3" \
         --filter-expression "MQ < 40.0"           --filter-name "MQ40" \
@@ -203,6 +209,12 @@ else
     # QD2         : QualByDepth < 2.0
     #               Variant quality is low relative to read depth.
     #               Likely a weak call with insufficient support.
+    #
+    # QUAL30      : QUAL < 30.0
+    #               Phred-scaled confidence that the variant exists at this
+    #               site. QUAL 30 = 1-in-1000 error probability. Low QUAL
+    #               means GATK has weak overall confidence the variant is
+    #               real, independent of read depth (unlike QD).
     #
     # FS60        : FisherStrand > 60.0
     #               Strong strand bias by Fisher's exact test.
@@ -238,7 +250,7 @@ fi
 # awk counts rows where column 7 contains the filter name.
 echo "" | tee -a "$LOG"
 echo "Filter failure summary (sites failing each filter):" | tee -a "$LOG"
-for filter in QD2 FS60 SOR3 MQ40 MQRankSum-12.5 ReadPosRankSum-8; do
+for filter in QD2 QUAL30 FS60 SOR3 MQ40 MQRankSum-12.5 ReadPosRankSum-8; do
     count=$(zcat "$TAGGED_VCF" | grep -v "^#" | awk -F'\t' -v f="$filter" '$7 ~ f {n++} END {print n+0}')
     echo "  $filter: $count sites" | tee -a "$LOG"
 done

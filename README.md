@@ -16,7 +16,8 @@ kct-genomics-scripts/
 ├── 03_calling_snps/          # GATK variant calling                   [env: gatk]
 │   ├── 05_gatk_markdups.sh   # Add read groups + mark PCR duplicates (5 parallel jobs)
 │   ├── 06_haplotypecaller.sh # Per-sample variant calling in gVCF mode (10 parallel jobs, 3 threads each)
-│   └── 07_genomicsdb_import.sh # Joint genotyping: GenomicsDBImport + GenotypeGVCFs
+│   ├── 07_genomicsdb_import.sh # Joint genotyping: GenomicsDBImport + GenotypeGVCFs
+│   └── 08_filter_snps.sh     # GATK hard filters: extract biallelic SNPs → tag → keep PASS only
 ├── environment_qc.yml        # Conda environment for scripts 01-03 (fastqc, fastp, multiqc)
 ├── environment_mapping.yml   # Conda environment for script 04 (bwa-mem2, samtools, parallel)
 ├── environment_gatk.yml      # Conda environment for scripts 05-07 (gatk4, samtools)
@@ -45,7 +46,7 @@ allow anyone to recreate them exactly.
 |---|---|---|
 | `qc` | `environment_qc.yml` | scripts 01–03 (fastqc, fastp, multiqc) |
 | `mapping` | `environment_mapping.yml` | script 04 (bwa-mem2, samtools, parallel) |
-| `gatk` | `environment_gatk.yml` | scripts 05–07 (gatk4, samtools) |
+| `gatk` | `environment_gatk.yml` | scripts 05–08 (gatk4, samtools) |
 
 **To recreate an environment from scratch:**
 ```bash
@@ -67,7 +68,7 @@ Reference: `Gymnocladus_dioicus_M_hap1.fa` (Haplotype 1, 986 sequences)
 | Sequence type | Count | Total bp | % of genome |
 |---|---|---|---|
 | Chromosomes (`chr*`) | 14 | 659,219,136 | ~93% |
-| Unplaced scaffolds (`scaffold_*`) | 900 | 51,323,761 | ~7% |
+| Unplaced scaffolds (`scaffold_*`) | 972 | 51,323,761 | ~7% |
 | **Total** | **986** | **710,542,897** | |
 
 Scaffold sizes range from ~660 kb (largest) to ~25 kb (smallest), averaging ~57 kb.
@@ -80,3 +81,4 @@ size cutoff (e.g. >100 kb) to avoid repetitive/low-complexity regions.
 |--------|-------|-----|-----------|-------|
 | `06_haplotypecaller.sh` | 2026-03-18 ~16:00 PDT | 2026-03-23 ~16:25 PDT | ~120 h | 61 samples, 10 parallel jobs × 3 threads, Hap 1 reference (986 scaffolds); all 61 GVCFs + .tbi produced, no errors |
 | `07_genomicsdb_import.sh` | 2026-03-26 | 2026-03-28 ~16:33 UTC | ~41 h (2,471.61 min) | GenomicsDBImport + GenotypeGVCFs across 986 scaffolds; outputs: genomicsdb workspace + `gymno_hap1.raw.vcf.gz` |
+| `08_filter_snps.sh` | — | — | — | GATK hard filters (SNPs only, biallelic, PASS); outputs: `gymno_hap1.snps.vcf.gz`, `gymno_hap1.snps.tagged.vcf.gz`, `gymno_hap1.snps.filtered.vcf.gz` in `gatk_filter_hap1/` |

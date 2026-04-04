@@ -18,6 +18,8 @@ kct-genomics-scripts/
 │   ├── 06_haplotypecaller.sh # Per-sample variant calling in gVCF mode (10 parallel jobs, 3 threads each)
 │   ├── 07_genomicsdb_import.sh # Joint genotyping: GenomicsDBImport + GenotypeGVCFs
 │   └── 08_filter_snps.sh     # GATK hard filters: extract biallelic SNPs → tag → keep PASS only
+├── 04_filter_qc/             # Hard filter QC and threshold evaluation  [env: R]
+│   └── 09_filter_qc.Rmd      # Annotation distributions, Ti/Tv ratio, threshold review
 ├── environment_qc.yml        # Conda environment for scripts 01-03 (fastqc, fastp, multiqc)
 ├── environment_mapping.yml   # Conda environment for script 04 (bwa-mem2, samtools, parallel)
 ├── environment_gatk.yml      # Conda environment for scripts 05-07 (gatk4, samtools)
@@ -81,4 +83,16 @@ size cutoff (e.g. >100 kb) to avoid repetitive/low-complexity regions.
 |--------|-------|-----|-----------|-------|
 | `06_haplotypecaller.sh` | 2026-03-18 ~16:00 PDT | 2026-03-23 ~16:25 PDT | ~120 h | 61 samples, 10 parallel jobs × 3 threads, Hap 1 reference (986 scaffolds); all 61 GVCFs + .tbi produced, no errors |
 | `07_genomicsdb_import.sh` | 2026-03-26 | 2026-03-28 ~16:33 UTC | ~41 h (2,471.61 min) | GenomicsDBImport + GenotypeGVCFs across 986 scaffolds; outputs: genomicsdb workspace + `gymno_hap1.raw.vcf.gz` |
-| `08_filter_snps.sh` | — | — | — | GATK hard filters (SNPs only, biallelic, PASS); outputs: `gymno_hap1.snps.vcf.gz`, `gymno_hap1.snps.tagged.vcf.gz`, `gymno_hap1.snps.filtered.vcf.gz` in `gatk_filter_hap1/` |
+| `08_filter_snps.sh` | 2026-04-01 03:19 UTC | 2026-04-01 04:32 UTC | ~1h 13min | 16,021,590 biallelic SNPs → 13,672,054 PASS (14.7% removed); outputs in `gatk_filter_hap1/` |
+
+**Script 08 filter failure summary** (sites failing each filter; sites can fail multiple filters):
+
+| Filter | Sites failed |
+|--------|-------------|
+| QD2 (QualByDepth < 2.0) | 1,363,777 |
+| QUAL30 (QUAL < 30.0) | 0 |
+| FS60 (FisherStrand > 60.0) | 75,218 |
+| SOR3 (StrandOddsRatio > 3.0) | 518,874 |
+| MQ40 (RMSMappingQuality < 40.0) | 801,726 |
+| MQRankSum-12.5 | 305 |
+| ReadPosRankSum-8 | 4 |

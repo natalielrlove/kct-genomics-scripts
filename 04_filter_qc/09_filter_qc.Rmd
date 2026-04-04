@@ -1,0 +1,312 @@
+---
+title: "09 — GATK Hard Filter QC"
+author: "Natalie Love"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: show
+---
+
+# Overview
+
+This notebook evaluates the GATK hard filters applied in script `08_filter_snps.sh` to the
+joint-genotyped *Gymnocladus dioicus* SNP callset (61 WGS samples, 30×, Hap 1 reference).
+
+**Goals:**
+
+1. Confirm the QUAL30 filter is correctly expressed (0 sites removed — expected or misspelled?)
+2. Plot annotation value distributions (PASS vs. failed) to evaluate whether filter thresholds
+   are placed at natural valleys in the data
+3. Check the Ti/Tv ratio as an independent quality metric
+4. Identify which filters are doing the most work and flag any that may need adjustment
+
+**Input files (produced by `08_filter_snps.sh`):**
+
+- Tagged VCF (all sites, filter labels applied):
+  `~/kct_genomics/output_files/gatk_filter_hap1/gymno_hap1.snps.tagged.vcf.gz`
+- Filtered VCF (PASS only):
+  `~/kct_genomics/output_files/gatk_filter_hap1/gymno_hap1.snps.filtered.vcf.gz`
+
+---
+
+# Step 1 — Extract annotation values (run on Curie)
+
+The following bash chunks are run on the Curie server, not locally. They extract per-site
+annotation values from the tagged VCF into a flat TSV for plotting in R, and run
+`bcftools stats` on the filtered VCF for Ti/Tv evaluation.
+
+**1a. Extract annotations from tagged VCF**
+
+```{bash eval=FALSE}
+# Run on Curie — conda activate gatk
+# Extracts one row per SNP site with PASS/FAIL label and all 7 annotation values.
+# MQRankSum and ReadPosRankSum will be '.' (missing) at homozygous sites — expected.
+# Output: ~16M rows, ~500 MB uncompressed.
+
+bcftools query \
+  -H \
+  -f '%CHROM\t%POS\t%QUAL\t%FILTER\t%INFO/QD\t%INFO/FS\t%INFO/SOR\t%INFO/MQ\t%INFO/MQRankSum\t%INFO/ReadPosRankSum\n' \
+  ~/kct_genomics/output_files/gatk_filter_hap1/gymno_hap1.snps.tagged.vcf.gz \
+  > ~/kct_genomics/output_files/gatk_filter_hap1/snp_annotations.tsv
+```
+
+**1b. Run bcftools stats on filtered VCF (for Ti/Tv)**
+
+```{bash eval=FALSE}
+# Run on Curie — conda activate gatk
+# Computes summary statistics including Ti/Tv ratio on the PASS-only VCF.
+
+bcftools stats \
+  ~/kct_genomics/output_files/gatk_filter_hap1/gymno_hap1.snps.filtered.vcf.gz \
+  > ~/kct_genomics/output_files/gatk_filter_hap1/bcftools_stats_filtered.txt
+```
+
+**1c. Download output files to local machine**
+
+```{bash eval=FALSE}
+# Run locally — copy annotation table and stats from Curie
+scp nlove@curie:~/kct_genomics/output_files/gatk_filter_hap1/snp_annotations.tsv \
+  ../../kct-genomics-outputs/snp_annotations.tsv
+
+scp nlove@curie:~/kct_genomics/output_files/gatk_filter_hap1/bcftools_stats_filtered.txt \
+  ../../kct-genomics-outputs/bcftools_stats_filtered.txt
+```
+
+---
+
+# Setup
+
+```{r setup, message=FALSE, warning=FALSE}
+library(tidyverse)
+
+# Path to annotation table downloaded from Curie
+annotations_path <- "../../kct-genomics-outputs/snp_annotations.tsv"
+stats_path       <- "../../kct-genomics-outputs/bcftools_stats_filtered.txt"
+```
+
+---
+
+# Step 2 — Load annotation table
+
+```{r load-data, message=FALSE}
+ann <- read_tsv(
+  annotations_path,
+  col_names = c("CHROM", "POS", "QUAL", "FILTER",
+                "QD", "FS", "SOR", "MQ", "MQRankSum", "ReadPosRankSum"),
+  comment   = "#",      # bcftools -H adds a header line starting with #
+  na        = ".",      # missing values (MQRankSum/ReadPosRankSum at hom sites)
+  show_col_types = FALSE
+)
+
+# Simplify FILTER: sites failing multiple filters (e.g. "QD2;SOR3") become "FAIL"
+# to make PASS vs. FAIL the primary stratification
+ann <- ann |>
+  mutate(pass = if_else(FILTER == "PASS", "PASS", "FAIL"))
+
+cat("Total sites:", nrow(ann), "\n")
+cat("PASS:", sum(ann$pass == "PASS"), "\n")
+cat("FAIL:", sum(ann$pass == "FAIL"), "\n")
+```
+
+---
+
+# Step 3 — QUAL distribution
+
+QUAL30 removed 0 sites in script 08. Two explanations:
+
+1. **The expression is misspelled** — GATK VariantFiltration silently ignores misspelled
+   annotations, treating all sites as passing that filter.
+2. **All sites genuinely have QUAL ≥ 30** — with 61 samples at 30× WGS, joint genotyping
+   produces high QUAL scores across the board, so QUAL < 30 is rare or absent.
+
+Plotting the QUAL distribution distinguishes these: if the expression is misspelled we'd
+see values below 30 in the PASS sites; if it's working correctly, the distribution should
+be entirely ≥ 30.
+
+```{r qual-dist, fig.width=8, fig.height=4}
+ann |>
+  ggplot(aes(x = QUAL, fill = pass)) +
+  geom_histogram(bins = 100, alpha = 0.7, position = "identity") +
+  geom_vline(xintercept = 30, linetype = "dashed", color = "red", linewidth = 0.8) +
+  annotate("text", x = 32, y = Inf, label = "QUAL = 30", vjust = 2,
+           hjust = 0, color = "red", size = 3.5) +
+  scale_fill_manual(values = c("PASS" = "#2196F3", "FAIL" = "#F44336")) +
+  scale_x_continuous(limits = c(0, quantile(ann$QUAL, 0.99, na.rm = TRUE))) +
+  labs(title = "QUAL distribution — all SNP sites",
+       x = "QUAL (Phred-scaled variant quality)",
+       y = "Number of sites",
+       fill = NULL) +
+  theme_bw()
+```
+
+**Interpretation:** If all PASS sites are well above the red dashed line (QUAL = 30), the
+filter expression is correct and the 0-removal result is genuine. If PASS sites extend below
+30, the expression may be silently failing.
+
+---
+
+# Step 4 — Annotation distributions (PASS vs. FAIL)
+
+For each annotation, we plot overlapping histograms of PASS (blue) and FAIL (red) sites.
+A well-placed threshold should sit at a clear valley between the two distributions.
+
+```{r annotation-distributions, fig.width=12, fig.height=10, message=FALSE, warning=FALSE}
+# Reshape to long format for faceting
+ann_long <- ann |>
+  select(pass, QD, FS, SOR, MQ, MQRankSum, ReadPosRankSum) |>
+  pivot_longer(-pass, names_to = "annotation", values_to = "value") |>
+  filter(!is.na(value))
+
+# Filter thresholds for reference lines
+thresholds <- tibble(
+  annotation = c("QD", "FS", "SOR", "MQ", "MQRankSum", "ReadPosRankSum"),
+  threshold  = c(2.0,  60.0, 3.0,  40.0, -12.5,         -8.0),
+  direction  = c("lo", "hi", "hi", "lo", "lo",           "lo")  # which side fails
+)
+
+# Plot — clip extreme tails at 99th percentile per annotation for readability
+ann_long |>
+  group_by(annotation) |>
+  mutate(lo = quantile(value, 0.005, na.rm = TRUE),
+         hi = quantile(value, 0.995, na.rm = TRUE)) |>
+  filter(value >= lo, value <= hi) |>
+  ungroup() |>
+  ggplot(aes(x = value, fill = pass)) +
+  geom_histogram(bins = 100, alpha = 0.7, position = "identity") +
+  geom_vline(data = thresholds,
+             aes(xintercept = threshold),
+             linetype = "dashed", color = "red", linewidth = 0.7) +
+  scale_fill_manual(values = c("PASS" = "#2196F3", "FAIL" = "#F44336")) +
+  facet_wrap(~annotation, scales = "free", ncol = 2) +
+  labs(title = "Annotation distributions — PASS vs. FAIL sites",
+       subtitle = "Red dashed line = current hard filter threshold | Tails clipped at 0.5th/99.5th percentile",
+       x = "Annotation value", y = "Number of sites", fill = NULL) +
+  theme_bw() +
+  theme(strip.text = element_text(face = "bold"))
+```
+
+**What to look for:**
+
+- **QD:** FAIL sites (red) should be concentrated at values < 2. If the red peak extends
+  far right of the threshold, some real variants may be caught.
+- **FS / SOR:** FAIL sites should cluster at high values (right tail). Low FS/SOR values
+  are expected to be PASS.
+- **MQ:** FAIL sites should cluster at low values (< 40). A large FAIL peak may indicate
+  many repetitive/poorly-mapped regions in the reference.
+- **MQRankSum / ReadPosRankSum:** These have many missing values (only calculated at het
+  sites). Very few sites should fail these filters given the low counts in the log.
+
+---
+
+# Step 5 — Per-filter failure counts
+
+From the script 08 log (recorded here for reference):
+
+```{r filter-counts}
+filter_counts <- tibble(
+  filter      = c("QD2", "QUAL30", "FS60", "SOR3", "MQ40",
+                  "MQRankSum-12.5", "ReadPosRankSum-8"),
+  sites_failed = c(1363777, 0, 75218, 518874, 801726, 305, 4),
+  threshold   = c("QD < 2.0", "QUAL < 30.0", "FS > 60.0", "SOR > 3.0",
+                  "MQ < 40.0", "MQRankSum < -12.5", "ReadPosRankSum < -8.0")
+)
+
+filter_counts |>
+  mutate(pct_of_total = round(sites_failed / 16021590 * 100, 2)) |>
+  arrange(desc(sites_failed)) |>
+  knitr::kable(
+    col.names = c("Filter", "Sites failed", "Expression", "% of total SNPs"),
+    format.args = list(big.mark = ",")
+  )
+```
+
+```{r filter-counts-plot, fig.width=7, fig.height=4}
+filter_counts |>
+  mutate(filter = fct_reorder(filter, sites_failed)) |>
+  ggplot(aes(x = filter, y = sites_failed)) +
+  geom_col(fill = "#F44336", alpha = 0.8) +
+  geom_text(aes(label = scales::comma(sites_failed)),
+            hjust = -0.1, size = 3.5) +
+  coord_flip() +
+  scale_y_continuous(labels = scales::comma,
+                     expand = expansion(mult = c(0, 0.2))) +
+  labs(title = "Sites failed per filter",
+       subtitle = "Total SNPs before filtering: 16,021,590 | After: 13,672,054",
+       x = NULL, y = "Sites failed") +
+  theme_bw()
+```
+
+---
+
+# Step 6 — Ti/Tv ratio
+
+Transitions (Ti) are purine↔purine or pyrimidine↔pyrimidine substitutions (A↔G, C↔T).
+Transversions (Tv) are purine↔pyrimidine substitutions (A↔C, A↔T, G↔C, G↔T).
+
+In the genome, transitions occur more often than transversions. For WGS data, the expected
+Ti/Tv ratio is approximately **2.0–2.2** for the whole genome. Values well below 2.0 suggest
+an excess of false positives (artifacts tend to be transversions); values well above 2.2 may
+indicate over-filtering.
+
+```{r titv, message=FALSE}
+# Parse Ti/Tv from bcftools stats output
+# The TSTV line format is: TSTV  <ts>  <tv>  <ts/tv>  <ts (1st ALT)>  <tv (1st ALT)>  <ts/tv (1st ALT)>
+stats_lines <- read_lines(stats_path)
+
+titv_line <- stats_lines[str_starts(stats_lines, "TSTV")]
+
+if (length(titv_line) > 0) {
+  titv_vals <- str_split(titv_line, "\t")[[1]]
+  tibble(
+    Metric = c("Transitions (Ti)", "Transversions (Tv)", "Ti/Tv ratio"),
+    Value  = c(
+      formatC(as.numeric(titv_vals[2]), format = "f", digits = 0, big.mark = ","),
+      formatC(as.numeric(titv_vals[3]), format = "f", digits = 0, big.mark = ","),
+      titv_vals[4]
+    )
+  ) |> knitr::kable()
+} else {
+  cat("TSTV line not found in bcftools stats output. Check stats file format.\n")
+}
+```
+
+**Interpretation:** Ti/Tv of ~2.0–2.2 indicates a well-filtered callset. If Ti/Tv is below
+2.0, consider relaxing the most aggressive filter (currently QD2 at 1.36M sites).
+
+---
+
+# Step 7 — Summary and threshold recommendations
+
+```{r summary}
+cat("=== Script 08 filter summary ===\n")
+cat("Biallelic SNPs before filtering: 16,021,590\n")
+cat("PASS SNPs after hard filters:    13,672,054\n")
+cat("Sites removed:                    2,349,536 (14.7%)\n\n")
+cat("Dominant filter: QD2 (1,363,777 sites = 8.5% of total)\n")
+cat("Second: MQ40 (801,726 sites = 5.0%)\n")
+cat("Third:  SOR3 (518,874 sites = 3.2%)\n\n")
+cat("Note: sites can fail multiple filters, so counts above are not additive.\n")
+```
+
+Based on the plots above, record any threshold adjustments recommended here before
+proceeding to population-level filtering (script 10).
+
+| Annotation | Current threshold | Recommended adjustment | Rationale |
+|------------|------------------|----------------------|-----------|
+| QD | < 2.0 | TBD | |
+| QUAL | < 30.0 | TBD | |
+| FS | > 60.0 | TBD | |
+| SOR | > 3.0 | TBD | |
+| MQ | < 40.0 | TBD | |
+| MQRankSum | < -12.5 | TBD | |
+| ReadPosRankSum | < -8.0 | TBD | |
+
+---
+
+# Session info
+
+```{r session-info}
+sessionInfo()
+```

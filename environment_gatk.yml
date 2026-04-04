@@ -5,6 +5,7 @@ channels:
   - defaults
 dependencies:
   - _openmp_mutex=4.5=20_gnu
+  - bcftools=1.9=h68d8f2e_9
   - bzip2=1.0.8=hda65f42_9
   - c-ares=1.11.0=h470a237_1
   - ca-certificates=2026.2.25=hbd8a1cb_0
@@ -12,16 +13,22 @@ dependencies:
   - gatk4=4.6.2.0=py310hdfd78af_1
   - graalpy=23.0.0=0_graalvm_native
   - graalpy-graalvm=23.0.0=h4d560db_0
+  - gsl=2.5=h294904e_1
   - htslib=1.9=ha228f0b_7
   - krb5=1.17.2=h926e7f8_0
+  - libblas=3.11.0=6_h4a7cf45_openblas
+  - libcblas=3.11.0=6_h0358290_openblas
   - libcurl=7.71.1=hcdd3856_8
   - libdeflate=1.0=h14c3975_1
   - libedit=3.1.20191231=h46ee950_2
   - libev=4.33=hd590300_2
   - libgcc=15.2.0=he0feb66_18
   - libgcc-ng=15.2.0=h69a702a_18
+  - libgfortran=15.2.0=h69a702a_18
+  - libgfortran5=15.2.0=h68bc16d_18
   - libgomp=15.2.0=he0feb66_18
   - libnghttp2=1.41.0=hab1572f_1
+  - libopenblas=0.3.32=pthreads_h94d23a6_0
   - libssh2=1.10.0=haa6b8db_3
   - libstdcxx=15.2.0=h934c35e_18
   - libstdcxx-ng=15.2.0=hdf11a46_18

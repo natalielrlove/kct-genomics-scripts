@@ -19,6 +19,10 @@
 
 set -euo pipefail
 
+# Activate conda environment before running this script:
+#   source /home/nlove/miniconda3/etc/profile.d/conda.sh
+#   conda activate gatk
+
 VCF=~/kct_genomics/output_files/gatk_filter_hap1/gymno_hap1.snps.filtered.vcf.gz
 
 # --- chr01 preview (fast) ------------------------------------

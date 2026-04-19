@@ -5,3 +5,11 @@ slurm-*.out
 
 # OS files
 .DS_Store
+
+# Large output data files (kept local, not pushed to GitHub)
+output_data/
+
+# R session artifacts
+.Rproj.user
+*.RData
+.Rhistory

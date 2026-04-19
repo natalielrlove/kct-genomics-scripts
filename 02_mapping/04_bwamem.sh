@@ -118,6 +118,11 @@ process_sample() {
   #   -T $out/bam/${sample}.tmp : temporary file prefix for sorting
   #   -o $out/bam/...sorted.bam : output sorted BAM file
   #   -                         : read input from the pipe (stdout of bwa-mem2)
+  # NOTE (Kreiner Lab alternative): Adding `| samtools view -q 30 |` between bwa-mem2 and
+  # samtools sort would filter out low-MAPQ reads *before* variant calling, which is more
+  # aggressive than the post-hoc INFO/MQ filter applied in script 08. At 30x coverage the
+  # practical difference is small, but for low-coverage data this pre-call filter is preferred.
+  # We did not implement it here; instead we use MQ < 40 as a site-level filter in script 08.
   bwa-mem2 mem -t "$threads_bwa" \
     "$ref" "$r1" "$r2" \
     2> "$out/logs/${sample}.bwa.log" \

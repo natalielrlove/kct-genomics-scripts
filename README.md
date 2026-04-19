@@ -96,3 +96,13 @@ size cutoff (e.g. >100 kb) to avoid repetitive/low-complexity regions.
 | MQ40 (RMSMappingQuality < 40.0) | 801,726 |
 | MQRankSum-12.5 | 305 |
 | ReadPosRankSum-8 | 4 |
+
+**Script 08b missingness check** (run 2026-04-19, original pipeline, PASS SNPs only, chr01–chr14):
+
+| Threshold | chr01 sites kept | chr01 total | chr01 % | chr01–14 sites kept | chr01–14 total | chr01–14 % |
+|-----------|-----------------|-------------|---------|---------------------|----------------|------------|
+| F_MISSING ≤ 0.5 | 1,195,784 | 1,212,145 | 98.6% | 13,462,101 | 13,662,332 | 98.5% |
+| F_MISSING ≤ 0.3 | 1,176,855 | 1,212,145 | 97.0% | 13,168,342 | 13,662,332 | 96.3% |
+| F_MISSING ≤ 0.1 | 1,108,361 | 1,212,145 | 91.4% | 12,077,197 | 13,662,332 | 88.3% |
+
+Very low missingness overall — consistent with 30× WGS coverage. Planned threshold for script 10: F_MISSING ≤ 0.1.

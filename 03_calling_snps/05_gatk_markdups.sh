@@ -73,8 +73,8 @@ set -euo pipefail
 # conda activate gatk
 
 # --- Directory paths -----------------------------------------
-# Input: sorted BAM files produced by 04_bwamem.sh
-IN="/home/nlove/kct_genomics/output_files/bwa_mem2_hap1/bam"
+# Input: MAPQ-filtered BAM files produced by 04b_mapq_filter.sh
+IN="/home/nlove/kct_genomics/output_files/bwa_mem2_hap1/bam_mq30"
 
 # Output: all GATK preprocessing results go here
 OUT="/home/nlove/kct_genomics/output_files/gatk_preproc"
@@ -102,11 +102,11 @@ process_sample() {
   local bam="$1"
   local out="$2"
 
-  # Strip the path and ".hap1.sorted.bam" suffix to get the base name
-  # e.g.: /path/to/Gymno_2013_110_CKDL250009714-1A_22V7CCLT4_L2.hap1.sorted.bam
+  # Strip the path and ".hap1.sorted.mq30.bam" suffix to get the base name
+  # e.g.: /path/to/Gymno_2013_110_CKDL250009714-1A_22V7CCLT4_L2.hap1.sorted.mq30.bam
   #     →                Gymno_2013_110_CKDL250009714-1A_22V7CCLT4_L2
   local base
-  base=$(basename "$bam" .hap1.sorted.bam)
+  base=$(basename "$bam" .hap1.sorted.mq30.bam)
 
   # --- Undetermined skip check --------------------------------
   # Undetermined BAMs come from reads that couldn't be assigned
@@ -127,7 +127,7 @@ process_sample() {
 
   # --- Parse read group fields from the filename --------------
   # Filenames follow the pattern:
-  #   Gymno_2013_110_CKDL250009714-1A_22V7CCLT4_L2.hap1.sorted.bam
+  #   Gymno_2013_110_CKDL250009714-1A_22V7CCLT4_L2.hap1.sorted.mq30.bam
   #   |---- SM ----|  |---- LB ----|  |--- PU ---|
   #
   # SM = sample name = first 3 underscore-delimited fields
@@ -210,12 +210,12 @@ export -f process_sample
 # GNU parallel distributes the BAM list across parallel_jobs slots.
 # {} is replaced with each BAM filepath in turn.
 echo "Starting read group assignment and duplicate marking..."
-echo "Samples found: $(ls "$IN"/*.hap1.sorted.bam | wc -l)"
+echo "Samples found: $(ls "$IN"/*.hap1.sorted.mq30.bam | wc -l)"
 echo "Running $parallel_jobs samples in parallel."
 
 parallel -j "$parallel_jobs" \
   process_sample {} "$OUT" \
-  ::: "$IN"/*.hap1.sorted.bam
+  ::: "$IN"/*.hap1.sorted.mq30.bam
 
 echo ""
 echo "All samples complete."

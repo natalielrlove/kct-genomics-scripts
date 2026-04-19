@@ -34,12 +34,14 @@ for miss in 0.5 0.3 0.1; do
   echo "F_MISSING <= ${miss}: ${kept} / ${total_chr01} sites kept (${pct}%)"
 done
 
-# --- Full VCF (slow, ~20-30 min) -----------------------------
+# --- All chromosomes (chr01-chr14, excludes unplaced scaffolds) ---------------
+CHROMS="chr01,chr02,chr03,chr04,chr05,chr06,chr07,chr08,chr09,chr10,chr11,chr12,chr13,chr14"
+
 echo ""
-echo "=== Full VCF ==="
-total=$(bcftools stats "$VCF" | awk '/^SN.*number of records/ {print $NF}')
+echo "=== chr01-chr14 (excludes unplaced scaffolds) ==="
+total=$(bcftools stats -r "$CHROMS" "$VCF" | awk '/^SN.*number of records/ {print $NF}')
 for miss in 0.5 0.3 0.1; do
-  kept=$(bcftools view -i "F_MISSING <= ${miss}" "$VCF" | bcftools view -H | wc -l)
+  kept=$(bcftools view -r "$CHROMS" -i "F_MISSING <= ${miss}" "$VCF" | bcftools view -H | wc -l)
   pct=$(echo "scale=1; ${kept} * 100 / ${total}" | bc)
   echo "F_MISSING <= ${miss}: ${kept} / ${total} sites kept (${pct}%)"
 done

@@ -112,6 +112,14 @@ knitr::opts_knit$set(root.dir = here::here())
 # Path to annotation table downloaded from Curie (stored in output_data/, gitignored)
 annotations_path <- "output_data/snp_annotations.tsv"
 stats_path       <- "output_data/bcftools_stats_filtered.txt"
+
+# Run identifier — change this when re-running after pipeline changes
+# e.g. "original" for the first run, "mq30_run" after adding 04b MAPQ filter
+run_id <- "original"
+
+# Output paths for comparison CSVs
+out_filter_counts <- "output_data/filter_counts.csv"
+out_qc_summary    <- "output_data/run_qc_summary.csv"
 ```
 
 ---
@@ -343,21 +351,33 @@ NL
 From the script 08 log (recorded here for reference):
 
 ```{r filter-counts}
+raw_snps  <- 16021590
+pass_snps <- 13672054
+
 filter_counts <- tibble(
   filter      = c("QD2", "QUAL30", "FS60", "SOR3", "MQ40",
                   "MQRankSum-12.5", "ReadPosRankSum-8"),
   sites_failed = c(1363777, 0, 75218, 518874, 801726, 305, 4),
   threshold   = c("QD < 2.0", "QUAL < 30.0", "FS > 60.0", "SOR > 3.0",
                   "MQ < 40.0", "MQRankSum < -12.5", "ReadPosRankSum < -8.0")
-)
+) |>
+  mutate(pct_of_total = round(sites_failed / raw_snps * 100, 2))
 
 filter_counts |>
-  mutate(pct_of_total = round(sites_failed / 16021590 * 100, 2)) |>
   arrange(desc(sites_failed)) |>
   knitr::kable(
     col.names = c("Filter", "Sites failed", "Expression", "% of total SNPs"),
     format.args = list(big.mark = ",")
   )
+
+# Export — append to CSV so multiple runs accumulate
+filter_counts |>
+  mutate(run = run_id, raw_snps = raw_snps) |>
+  select(run, everything()) |>
+  write_csv(out_filter_counts,
+            append = file.exists(out_filter_counts))
+
+cat("Filter counts written to:", out_filter_counts, "\n")
 ```
 
 ```{r filter-counts-plot, fig.width=7, fig.height=4}
@@ -396,14 +416,19 @@ stats_lines <- read_lines(stats_path)
 
 titv_line <- stats_lines[str_starts(stats_lines, "TSTV")]
 
+titv_ti <- NA_real_; titv_tv <- NA_real_; titv_ratio <- NA_real_
+
 if (length(titv_line) > 0) {
-  titv_vals <- str_split(titv_line, "\t")[[1]]
+  titv_vals  <- str_split(titv_line, "\t")[[1]]
+  titv_ti    <- as.numeric(titv_vals[3])
+  titv_tv    <- as.numeric(titv_vals[4])
+  titv_ratio <- as.numeric(titv_vals[5])
   tibble(
     Metric = c("Transitions (Ti)", "Transversions (Tv)", "Ti/Tv ratio"),
     Value  = c(
-      formatC(as.numeric(titv_vals[3]), format = "f", digits = 0, big.mark = ","),
-      formatC(as.numeric(titv_vals[4]), format = "f", digits = 0, big.mark = ","),
-      titv_vals[5]
+      formatC(titv_ti, format = "f", digits = 0, big.mark = ","),
+      formatC(titv_tv, format = "f", digits = 0, big.mark = ","),
+      as.character(titv_ratio)
     )
   ) |> knitr::kable()
 } else {
@@ -442,6 +467,38 @@ proceeding to population-level filtering (script 10).
 | MQ | < 40.0 | TBD | |
 | MQRankSum | < -12.5 | TBD | |
 | ReadPosRankSum | < -8.0 | TBD | |
+
+---
+
+# Step 8b — Export run QC summary
+
+```{r export-qc-summary}
+# Assemble one-row summary for this run and append to comparison CSV
+qc_summary <- tibble(
+  run           = run_id,
+  date          = as.character(Sys.Date()),
+  n_samples     = 61,
+  raw_snps      = raw_snps,
+  pass_snps     = pass_snps,
+  pct_removed   = round((raw_snps - pass_snps) / raw_snps * 100, 2),
+  titv          = titv_ratio,
+  titv_ti       = titv_ti,
+  titv_tv       = titv_tv,
+  dp_mean       = round(dp_summary$mean_dp, 1),
+  dp_median     = round(dp_summary$median_dp, 1),
+  dp_sd         = round(dp_summary$sd_dp, 1),
+  dp_min_filter = dp_min_suggested,
+  dp_max_filter = dp_max_suggested
+)
+
+qc_summary |> knitr::kable()
+
+write_csv(qc_summary,
+          out_qc_summary,
+          append = file.exists(out_qc_summary))
+
+cat("QC summary written to:", out_qc_summary, "\n")
+```
 
 ---
 

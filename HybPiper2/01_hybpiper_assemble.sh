@@ -197,12 +197,8 @@ assemble_sample() {
     #   Use BWA for mapping (required when target is nucleotide, -t_dna).
     #   Alternative is DIAMOND (for protein targets, -t_aa) — not used here.
     #
-    # --run_intronerate
-    #   After assembling exon sequences, also recover flanking intron
-    #   sequence ("supercontigs" = exon + intron). Introns have higher
-    #   variation within a species and are valuable for population-level
-    #   analyses. Note: HybPiper ≥ 2.1.6 runs this by default; explicit
-    #   flag included here for clarity and compatibility with older versions.
+    # Intron recovery (--run_intronerate) runs by default in HybPiper ≥ 2.1.6
+    # and the flag has been removed — supercontig output is automatic.
     #
     # --cpu $threads
     #   Number of threads for BWA mapping within this sample.
@@ -211,7 +207,6 @@ assemble_sample() {
         -r "$r1" "$r2" \
         --prefix "$prefix" \
         --bwa \
-        --run_intronerate \
         --cpu "$threads" \
         2>&1 | tee "$out/${prefix}.assemble.log"
 
@@ -292,15 +287,21 @@ echo "Heatmap written to: $OUT/recovery_heatmap.png"
 # one multi-FASTA file per locus — the format needed for
 # alignment and population-level analyses.
 #
-# "dna" retrieves exon sequences only.
-# To retrieve exon + intron (supercontig), replace "dna" with
-# "supercontig" — but only if --run_intronerate ran successfully.
+# Retrieving both:
+#   dna        = exon sequences only (shorter, more conserved)
+#   supercontig = exon + flanking intron (longer, more variable,
+#                 better for within-species population genetics)
+# Intronerate runs automatically in HybPiper >= 2.1.6.
 
 echo "============================================================"
 echo "STEP 5: hybpiper retrieve_sequences"
 echo "============================================================"
 
 hybpiper retrieve_sequences dna \
+    -t_dna "$TARGET" \
+    --sample_names "$NAMEFILE"
+
+hybpiper retrieve_sequences supercontig \
     -t_dna "$TARGET" \
     --sample_names "$NAMEFILE"
 

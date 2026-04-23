@@ -113,8 +113,9 @@ cd "$OUT"
 # Each sample is processed independently, so we parallelize
 # across samples using GNU parallel.
 
-# Build the list of R1 files to process
-ALL_R1=("$IN"/*_1.trim.fq.gz)
+# Build the list of R1 files to process — Gymno_* only, excludes
+# Undetermined_* demultiplexing artifacts
+ALL_R1=("$IN"/Gymno_*_1.trim.fq.gz)
 
 if [[ "$TEST_MODE" == true ]]; then
     # Slice to first 5 samples for the test run

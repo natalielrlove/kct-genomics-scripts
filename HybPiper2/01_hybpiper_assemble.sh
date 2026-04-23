@@ -84,8 +84,8 @@ OUT="/home/nlove/kct_genomics/output_files/hybpiper"
 # --- Thread and parallelism settings -------------------------
 N_JOBS=8       # Number of samples to process simultaneously
                # Adjust based on available cores: N_JOBS × THREADS = total cores used
-THREADS=2      # CPU threads per sample (used by BWA for read mapping)
-               # 8 jobs × 2 threads = 16 cores total (test run: 5 × 2 = 10 cores)
+THREADS=4      # CPU threads per sample (used by BWA for read mapping)
+               # 8 jobs × 4 threads = 32 cores total
 
 # --- Test mode -----------------------------------------------
 # Set TEST_MODE=true to run only the first 5 samples as a quick
@@ -93,7 +93,7 @@ THREADS=2      # CPU threads per sample (used by BWA for read mapping)
 # Confirms: HybPiper is working, target file is compatible,
 # recovery looks reasonable, and runtime is as expected.
 # Set to false (or remove) once you're happy with the test results.
-TEST_MODE=true
+TEST_MODE=false
 
 # ============================================================
 # --- Setup ---------------------------------------------------

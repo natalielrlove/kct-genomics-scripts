@@ -20,6 +20,12 @@ kct-genomics-scripts/
 │   └── 08_filter_snps.sh     # GATK hard filters: extract biallelic SNPs → tag → keep PASS only
 ├── 04_filter_qc/             # Hard filter QC and threshold evaluation  [env: R]
 │   └── 09_filter_qc.Rmd      # Annotation distributions, Ti/Tv ratio, threshold review
+├── HybPiper2/                # Target locus recovery from WGS data   [env: hybpiper]
+│   ├── 00_prep_targets.sh    # One-time reformat of Crameri target FASTA for HybPiper2 (run locally)
+│   └── 01_hybpiper_assemble.sh # Full HybPiper2 pipeline: assemble → stats → heatmap → retrieve
+├── Fabaceae_probes_targets/  # Target sequences for HybPiper2 (committed to repo)
+│   ├── Fabaceae_iter2_1005reg.fasta          # Original Crameri et al. sequences (1,005 loci)
+│   └── Fabaceae_iter2_1005reg_hybpiper.fasta # HybPiper-ready version (reformatted headers)
 ├── environment_qc.yml        # Conda environment for scripts 01-03 (fastqc, fastp, multiqc)
 ├── environment_mapping.yml   # Conda environment for script 04 (bwa-mem2, samtools, parallel)
 ├── environment_gatk.yml      # Conda environment for scripts 05-07 (gatk4, samtools)
@@ -41,7 +47,7 @@ Push changes from local machine, pull on server to run.
 
 ## Conda environments
 
-Three conda environments are used across the pipeline. The yml files in this repo
+Four conda environments are used across the pipeline. The yml files in this repo
 allow anyone to recreate them exactly.
 
 | Environment | yml file | Used by |
@@ -49,6 +55,7 @@ allow anyone to recreate them exactly.
 | `qc` | `environment_qc.yml` | scripts 01–03 (fastqc, fastp, multiqc) |
 | `mapping` | `environment_mapping.yml` | script 04 (bwa-mem2, samtools, parallel) |
 | `gatk` | `environment_gatk.yml` | scripts 05–08 (gatk4, samtools) |
+| `hybpiper` | `environment_hybpiper.yml` | HybPiper2 scripts (hybpiper, bwa, spades, parallel) |
 
 **To recreate an environment from scratch:**
 ```bash
@@ -62,6 +69,51 @@ conda activate gatk   # or qc, or mapping
 ```
 
 Each script's header specifies which environment it requires.
+
+## HybPiper2 — Target locus recovery
+
+HybPiper2 is used to assess how well the Crameri et al. (2022) **Fabaceae1005** probe set recovers target loci from *Gymnocladus dioicus* whole-genome sequencing data. The approach treats 30× WGS reads as if they came from a hybridization capture experiment (virtual capture), providing a recovery estimate before committing to wet-lab probe synthesis.
+
+**Probe set:** 1,005 conserved nuclear loci derived from the *Cajanus cajan* (pigeon pea) reference genome, validated across all six Fabaceae subfamilies including Caesalpinioideae (*Gymnocladus*).
+
+### Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `HybPiper2/00_prep_targets.sh` | One-time local reformat of Crameri target FASTA for HybPiper2 compatibility (run on Mac before first use) |
+| `HybPiper2/01_hybpiper_assemble.sh` | Full pipeline: assemble all samples → stats → recovery heatmap → retrieve sequences |
+
+### Target file format — CRITICAL
+
+HybPiper2 requires target FASTA headers in the format `>taxon-gene`, where the **part after the last dash** becomes the locus directory name. With 1,005 loci this must be:
+
+```
+>Cajanus_cajan-7271    ← correct: gene=7271 → 1005 unique locus directories
+>Cajanus_cajan-243
+```
+
+**Not** the reverse (`>7271-Cajanus_cajan`), which causes HybPiper to use `Cajanus_cajan` as the gene name for all sequences → one directory instead of 1005.
+
+`00_prep_targets.sh` produces the correct format. The reformatted file (`Fabaceae_iter2_1005reg_hybpiper.fasta`) is committed to this repo and ready to use.
+
+### Expected warnings during assembly
+
+These warnings are normal and do not indicate errors:
+
+- **Stop codons in translated sequence** — expected for genomic/non-CDS targets that include introns; these are conserved windows, not annotated exons
+- **Paralog warnings** — normal for a diploid species; HybPiper selects the most likely ortholog
+- **Non-consecutive Exonerate hits** — rare; affects supercontig stitching only, not the primary exon sequence
+
+Confirmation of a successful run: `"Generated sequences from 1005 genes!"` in the assembly log.
+
+### Key outputs
+
+| File/Directory | Description |
+|---|---|
+| `recovery_heatmap.png` | Heatmap of % target recovered per sample × locus — primary diagnostic |
+| `seq_lengths.tsv` | Numeric recovery table (input to heatmap) |
+| `*.FNA` | One multi-FASTA per locus across all samples (analysis-ready) |
+| `*_supercontig.fasta` | Exon + flanking intron sequences (more variable; better for within-species analyses) |
 
 ## Reference genome assembly stats
 
@@ -81,6 +133,7 @@ size cutoff (e.g. >100 kb) to avoid repetitive/low-complexity regions.
 
 | Script | Start | End | Wall time | Notes |
 |--------|-------|-----|-----------|-------|
+| `01_hybpiper_assemble.sh` | 2026-04-23 ~02:31 UTC | in progress | — | 61 samples, 8 parallel jobs × 2 threads; correct target format `>Cajanus_cajan-7271`; numbered locus directories confirmed per sample |
 | `06_haplotypecaller.sh` | 2026-03-18 ~16:00 PDT | 2026-03-23 ~16:25 PDT | ~120 h | 61 samples, 10 parallel jobs × 3 threads, Hap 1 reference (986 scaffolds); all 61 GVCFs + .tbi produced, no errors |
 | `07_genomicsdb_import.sh` | 2026-03-26 | 2026-03-28 ~16:33 UTC | ~41 h (2,471.61 min) | GenomicsDBImport + GenotypeGVCFs across 986 scaffolds; outputs: genomicsdb workspace + `gymno_hap1.raw.vcf.gz` |
 | `08_filter_snps.sh` | 2026-04-01 03:19 UTC | 2026-04-01 04:32 UTC | ~1h 13min | 16,021,590 biallelic SNPs → 13,672,054 PASS (14.7% removed); outputs in `gatk_filter_hap1/` |

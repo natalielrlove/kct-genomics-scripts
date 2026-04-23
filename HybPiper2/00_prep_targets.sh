@@ -64,9 +64,9 @@
 #   >NA_LG_Scaffold098279_1_187_ID_243
 #
 # HYBPIPER-READY FORMAT (produced by this script):
-#   >7271-Cajanus_cajan
-#   >7901-Cajanus_cajan
-#   >243-Cajanus_cajan
+#   >Cajanus_cajan-7271
+#   >Cajanus_cajan-7901
+#   >Cajanus_cajan-243
 #
 # The ".merged" suffix (present on regions where two adjacent
 # target windows were merged into one) is stripped — it is
@@ -97,7 +97,7 @@ echo "Output: $OUT"
 #
 # Sequence lines (not starting with >) are passed through unchanged.
 
-sed 's/>.*_ID_\([0-9]*\).*/>\1-Cajanus_cajan/' "$IN" > "$OUT"
+sed 's/>.*_ID_\([0-9]*\).*/\>Cajanus_cajan-\1/' "$IN" > "$OUT"
 
 # --- Verify the output ---------------------------------------
 N_IN=$(grep -c "^>" "$IN")

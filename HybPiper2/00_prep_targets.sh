@@ -64,9 +64,17 @@
 #   >NA_LG_Scaffold098279_1_187_ID_243
 #
 # HYBPIPER-READY FORMAT (produced by this script):
-#   >Cajanus_cajan-7271
-#   >Cajanus_cajan-7901
-#   >Cajanus_cajan-243
+#   >7271-Cajanus_cajan
+#   >7901-Cajanus_cajan
+#   >243-Cajanus_cajan
+#
+# IMPORTANT — FORMAT RULE:
+#   HybPiper uses the part BEFORE the last dash as the locus/gene
+#   identifier (what becomes the output directory name and locus ID
+#   in all downstream stats). The part AFTER the last dash is the
+#   taxon label. So gene ID MUST come first: >GENEID-TAXON.
+#   Putting the taxon first (>Cajanus_cajan-7271) causes all 1005
+#   sequences to be treated as ONE gene called "Cajanus_cajan".
 #
 # The ".merged" suffix (present on regions where two adjacent
 # target windows were merged into one) is stripped — it is
@@ -97,7 +105,7 @@ echo "Output: $OUT"
 #
 # Sequence lines (not starting with >) are passed through unchanged.
 
-sed 's/>.*_ID_\([0-9]*\).*/\>Cajanus_cajan-\1/' "$IN" > "$OUT"
+sed 's/>.*_ID_\([0-9]*\).*/>\1-Cajanus_cajan/' "$IN" > "$OUT"
 
 # --- Verify the output ---------------------------------------
 N_IN=$(grep -c "^>" "$IN")

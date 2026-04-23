@@ -84,8 +84,8 @@ OUT="/home/nlove/kct_genomics/output_files/hybpiper"
 # --- Thread and parallelism settings -------------------------
 N_JOBS=8       # Number of samples to process simultaneously
                # Adjust based on available cores: N_JOBS × THREADS = total cores used
-THREADS=4      # CPU threads per sample (used by BWA for read mapping)
-               # 8 jobs × 4 threads = 32 cores total
+THREADS=2      # CPU threads per sample (used by BWA for read mapping)
+               # 8 jobs × 2 threads = 16 cores total
 
 # --- Test mode -----------------------------------------------
 # Set TEST_MODE=true to run only the first 5 samples as a quick

@@ -202,16 +202,22 @@ echo "Sequences in reference: $N_SEQS"
 # BWA index — required for read mapping in 04_variantcall.sh
 bwa index "$REF"
 
-# samtools fai index — required by GATK
+# samtools fai index — required by GATK HaplotypeCaller
 samtools faidx "$REF"
+
+# GATK sequence dictionary — required by GATK HaplotypeCaller.
+# Creates a .dict file listing contig names and lengths.
+# GATK requires all three: .fai, .dict, and BWA index.
+gatk CreateSequenceDictionary -R "$REF"
 
 echo ""
 echo "============================================================"
 echo "Reference build complete."
 echo "Key outputs:"
-echo "  Clean locus list : $CLEAN_LOCI"
-echo "  Paralog locus list: $PARALOG_LOCI"
-echo "  Reference FASTA  : $REF"
-echo "  BWA index        : ${REF}.{amb,ann,bwt,pac,sa}"
-echo "  samtools index   : ${REF}.fai"
+echo "  Clean locus list  : $CLEAN_LOCI"
+echo "  Paralog locus list : $PARALOG_LOCI"
+echo "  Reference FASTA   : $REF"
+echo "  BWA index         : ${REF}.{amb,ann,bwt,pac,sa}"
+echo "  samtools index    : ${REF}.fai"
+echo "  GATK dictionary   : ${REF%.fasta}.dict"
 echo "============================================================"

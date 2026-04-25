@@ -288,8 +288,8 @@ hybpiper stats \
     -t_dna "$TARGET" \
     supercontig \
     "$NAMEFILE" \
-    --seq_lengths_filename supercontig_seq_lengths.tsv \
-    --stats_filename hybpiper_stats_supercontig.tsv
+    --seq_lengths_filename supercontig_seq_lengths \
+    --stats_filename hybpiper_stats_supercontig
 
 echo "Stats complete. Output: $OUT/supercontig_seq_lengths.tsv"
 

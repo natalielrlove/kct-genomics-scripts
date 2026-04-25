@@ -156,27 +156,28 @@ while IFS= read -r locus; do
     # Extract the longest sequence from this multi-FASTA.
     # awk accumulates each sequence, tracks the max length,
     # and prints only the header + sequence of the longest entry.
-    awk '
+    # The header is replaced with the locus ID so every sequence in
+    # the reference has a unique name (the source sample name is NOT
+    # used — the same sample can be longest for many loci, which would
+    # cause duplicate contig names and break samtools faidx / GATK).
+    awk -v locus="$locus" '
     /^>/ {
         if (seq != "") {
             seqlen = length(seq)
             if (seqlen > maxlen) {
                 maxlen = seqlen
-                maxheader = header
                 maxseq = seq
             }
         }
-        header = $0
         seq = ""
         next
     }
     { seq = seq $0 }
     END {
         if (length(seq) > maxlen) {
-            maxheader = header
             maxseq = seq
         }
-        print maxheader
+        print ">" locus
         print maxseq
     }
     ' "$fna" >> "$REF"
@@ -209,10 +210,12 @@ bwa index "$REF"
 # samtools fai index — required by GATK HaplotypeCaller
 samtools faidx "$REF"
 
-# GATK sequence dictionary — required by GATK HaplotypeCaller.
+# Sequence dictionary — required by GATK HaplotypeCaller.
 # Creates a .dict file listing contig names and lengths.
-# GATK requires all three: .fai, .dict, and BWA index.
-gatk CreateSequenceDictionary -R "$REF"
+# Using samtools dict (available in the hybpiper environment) instead
+# of gatk CreateSequenceDictionary to avoid needing the gatk environment.
+# GATK accepts .dict files from either tool.
+samtools dict "$REF" > "${REF%.fasta}.dict"
 
 echo ""
 echo "============================================================"

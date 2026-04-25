@@ -79,32 +79,32 @@ TARGET="/home/nlove/kct_genomics/scripts/Fabaceae_probes_targets/Fabaceae_iter2_
 # per sample. paralog_retriever must be run from here.
 OUT="/home/nlove/kct_genomics/output_files/hybpiper"
 
-# Sample name file generated in 01_hybpiper_assemble.sh STEP 2
-NAMEFILE="$OUT/namefile.txt"
-
 # ============================================================
 # --- Run paralog_retriever -----------------------------------
 # ============================================================
+# Note: paralog_retriever does not take a namefile — it finds
+# samples automatically by scanning --hybpiper_dir for
+# subdirectories that contain HybPiper assemble output.
 
 cd "$OUT"
 
 echo "============================================================"
 echo "hybpiper paralog_retriever"
 echo "Target file : $TARGET"
-echo "Namefile    : $NAMEFILE"
 echo "Output dir  : $OUT"
 echo "============================================================"
 
 hybpiper paralog_retriever \
     --targetfile_dna "$TARGET" \
-    --namelist "$NAMEFILE" \
+    --hybpiper_dir "$OUT" \
     --heatmap_dpi 300
 
 echo ""
 echo "============================================================"
 echo "paralog_retriever complete."
 echo "Key outputs:"
-echo "  Paralog heatmap  : $OUT/paralog_heatmap.png"
-echo "  Paralog sequences: $OUT/paralogs_all/"
-echo "  Summary table    : $OUT/putative_paralog_report.tsv"
+echo "  Paralog heatmap        : $OUT/paralog_heatmap.png"
+echo "  Paralog sequences      : $OUT/paralogs_all/"
+echo "  Per-locus report       : $OUT/paralog_report.tsv"
+echo "  Above-threshold report : $OUT/paralogs_above_threshold_report.txt"
 echo "============================================================"

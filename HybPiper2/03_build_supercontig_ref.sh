@@ -125,9 +125,13 @@ echo "  $CLEAN_LOCI"
 # possible mapping target. Using the first sample's sequence
 # would be arbitrary and potentially shorter.
 #
-# The supercontig FNA files produced by retrieve_sequences are
-# named: {locus}_supercontig.FNA
+# The supercontig FASTA files produced by retrieve_sequences are
+# named: {locus}.fasta  (NOT {locus}_supercontig.FNA)
+# hybpiper retrieve_sequences supercontig produces {locus}.fasta;
+# hybpiper retrieve_sequences dna    produces {locus}.FNA.
 # Each file is a multi-FASTA with one entry per sample.
+# Some clean loci may still lack a .fasta if no sample produced a
+# supercontig — these are skipped (exon-only loci).
 
 echo ""
 echo "============================================================"
@@ -141,10 +145,10 @@ N_WRITTEN=0
 N_MISSING=0
 
 while IFS= read -r locus; do
-    fna="$OUT/${locus}_supercontig.FNA"
+    fna="$OUT/${locus}.fasta"
 
     if [[ ! -f "$fna" ]]; then
-        echo "WARNING: missing FNA for locus $locus — skipping"
+        echo "WARNING: no supercontig for locus $locus — skipping (exon-only)"
         (( N_MISSING++ )) || true
         continue
     fi

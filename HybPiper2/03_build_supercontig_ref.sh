@@ -13,10 +13,12 @@
 # contains the supercontig sequence (exon + flanking intron) for
 # all 61 samples at locus 7271.
 #
-# For variant calling, we need a single reference FASTA that one
-# representative sequence per locus. HybPiper's convention is to
-# use the first sequence in the FNA file, which is from the first
-# sample in the namefile.
+# For variant calling, we need a single representative sequence
+# per locus as the mapping reference. Following Slimp et al. (2021,
+# Applications in Plant Sciences), we select the LONGEST supercontig
+# across all samples for each locus. The longest sequence has the
+# most flanking intron recovered and gives all samples the best
+# possible mapping target.
 #
 # This reference is much smaller than the whole Gymnocladus genome
 # (~1.5–2 Mb across ~928 clean loci vs. 710 Mb for the full
@@ -111,9 +113,17 @@ echo "  $CLEAN_LOCI"
 # ============================================================
 # --- STEP 2: Build reference FASTA --------------------------
 # ============================================================
-# For each clean locus, extract the FIRST sequence from its
-# supercontig FNA file. The first sequence is the first sample
-# in the namefile and serves as the per-locus reference.
+# For each clean locus, select the LONGEST supercontig sequence
+# across all samples and write it to the reference FASTA.
+#
+# This follows Slimp et al. (2021, Applications in Plant Sciences):
+#   "reference sequences were constructed by selecting the longest
+#    supercontig recovered for that species for each gene" (Fig. 2).
+#
+# Rationale: the longest supercontig has the most flanking intron
+# sequence recovered, giving reads from all samples the best
+# possible mapping target. Using the first sample's sequence
+# would be arbitrary and potentially shorter.
 #
 # The supercontig FNA files produced by retrieve_sequences are
 # named: {locus}_supercontig.FNA
@@ -122,6 +132,7 @@ echo "  $CLEAN_LOCI"
 echo ""
 echo "============================================================"
 echo "STEP 2: Building clean supercontig reference FASTA"
+echo "(selecting longest supercontig per locus, per Slimp et al. 2021)"
 echo "============================================================"
 
 > "$REF"   # empty the output file before writing
@@ -138,9 +149,34 @@ while IFS= read -r locus; do
         continue
     fi
 
-    # Extract only the first sequence (first header + its sequence lines)
-    # awk exits after writing the first sequence
-    awk '/^>/{if(seen++) exit; seen=1} seen{print}' "$fna" >> "$REF"
+    # Extract the longest sequence from this multi-FASTA.
+    # awk accumulates each sequence, tracks the max length,
+    # and prints only the header + sequence of the longest entry.
+    awk '
+    /^>/ {
+        if (seq != "") {
+            seqlen = length(seq)
+            if (seqlen > maxlen) {
+                maxlen = seqlen
+                maxheader = header
+                maxseq = seq
+            }
+        }
+        header = $0
+        seq = ""
+        next
+    }
+    { seq = seq $0 }
+    END {
+        if (length(seq) > maxlen) {
+            maxheader = header
+            maxseq = seq
+        }
+        print maxheader
+        print maxseq
+    }
+    ' "$fna" >> "$REF"
+
     (( N_WRITTEN++ )) || true
 
 done < "$CLEAN_LOCI"

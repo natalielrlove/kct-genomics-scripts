@@ -249,13 +249,28 @@ echo "$(wc -l < "$NAMEFILE") samples written to $NAMEFILE"
 # ============================================================
 # --- STEP 3: Summary statistics ------------------------------
 # ============================================================
-# Produces seq_lengths.tsv: a table showing, for each sample × locus,
-# how much of the target sequence was recovered (as % of target length).
-# Values close to 1.0 = full recovery; 0 = nothing recovered.
-# This table is also the input for the recovery heatmap (STEP 4).
+# Runs hybpiper stats twice:
+#
+#   gene       → seq_lengths.tsv
+#     Raw bp lengths of the extracted exon (CDS) sequence per
+#     sample × locus. MeanLength row = Cajanus reference exon
+#     length. Used for the recovery heatmap (STEP 4) and for
+#     calculating what fraction of the reference each sample
+#     recovered (GenesAt25/50/75pct in hybpiper_stats.tsv).
+#
+#   supercontig → supercontig_seq_lengths.tsv
+#     Raw bp lengths of the supercontig (exon + flanking intron)
+#     per sample × locus. Subtracting gene lengths from these
+#     values gives the amount of intron sequence recovered.
+#     Intron sequence is more variable than exon and is the
+#     primary source of population-level SNPs in target-capture
+#     and virtual-capture analyses.
+#
+# Both calls must be run from $OUT so output files are written
+# to the correct directory.
 
 echo "============================================================"
-echo "STEP 3: hybpiper stats"
+echo "STEP 3a: hybpiper stats (gene / exon)"
 echo "============================================================"
 
 hybpiper stats \
@@ -264,6 +279,19 @@ hybpiper stats \
     "$NAMEFILE"
 
 echo "Stats complete. Output: $OUT/seq_lengths.tsv"
+
+echo "============================================================"
+echo "STEP 3b: hybpiper stats (supercontig / exon + intron)"
+echo "============================================================"
+
+hybpiper stats \
+    -t_dna "$TARGET" \
+    supercontig \
+    "$NAMEFILE" \
+    --seq_lengths_filename supercontig_seq_lengths.tsv \
+    --stats_filename hybpiper_stats_supercontig.tsv
+
+echo "Stats complete. Output: $OUT/supercontig_seq_lengths.tsv"
 
 # ============================================================
 # --- STEP 4: Recovery heatmap --------------------------------
@@ -311,7 +339,8 @@ echo ""
 echo "============================================================"
 echo "HybPiper2 pipeline complete."
 echo "Key outputs:"
-echo "  Recovery heatmap : $OUT/recovery_heatmap.png"
-echo "  Stats table      : $OUT/seq_lengths.tsv"
-echo "  Retrieved seqs   : $OUT/*.FNA  (one file per locus)"
+echo "  Recovery heatmap      : $OUT/recovery_heatmap.png"
+echo "  Exon stats            : $OUT/seq_lengths.tsv"
+echo "  Supercontig stats     : $OUT/supercontig_seq_lengths.tsv"
+echo "  Retrieved seqs        : $OUT/*.FNA  (one file per locus)"
 echo "============================================================"

@@ -78,7 +78,7 @@ REF="/home/nlove/kct_genomics/output_files/hybpiper/gymno_supercontigs_clean.fas
 IN="/home/nlove/kct_genomics/output_files/fastp/trimmed"
 
 # Output directory for all variant calling results
-OUT="/home/nlove/kct_genomics/output_files/hybpiper_variantcall"
+OUT="/data/labs/Love/Shared/output_files/hybpiper_variantcall"
 
 # --- Thread and parallelism settings -------------------------
 N_JOBS=4          # Samples to process simultaneously.

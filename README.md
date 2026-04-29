@@ -134,9 +134,10 @@ size cutoff (e.g. >100 kb) to avoid repetitive/low-complexity regions.
 | Script | Start | End | Wall time | Notes |
 |--------|-------|-----|-----------|-------|
 | `01_hybpiper_assemble.sh` | 2026-04-23 ~02:31 UTC | in progress | — | 61 samples, 8 parallel jobs × 2 threads; correct target format `>Cajanus_cajan-7271`; numbered locus directories confirmed per sample |
-| `06_haplotypecaller.sh` | 2026-03-18 ~16:00 PDT | 2026-03-23 ~16:25 PDT | ~120 h | 61 samples, 10 parallel jobs × 3 threads, Hap 1 reference (986 scaffolds); all 61 GVCFs + .tbi produced, no errors |
-| `07_genomicsdb_import.sh` | 2026-03-26 | 2026-03-28 ~16:33 UTC | ~41 h (2,471.61 min) | GenomicsDBImport + GenotypeGVCFs across 986 scaffolds; outputs: genomicsdb workspace + `gymno_hap1.raw.vcf.gz` |
-| `08_filter_snps.sh` | 2026-04-01 03:19 UTC | 2026-04-01 04:32 UTC | ~1h 13min | 16,021,590 biallelic SNPs → 13,672,054 PASS (14.7% removed); outputs in `gatk_filter_hap1/` |
+| `05_gatk_markdups.sh` *(mq30 re-run)* | 2026-04-19 | 2026-04-20 | ~191 min (~3h 11min) | 10 parallel jobs; input: MQ30-filtered BAMs from `bam_mq30/` |
+| `06_haplotypecaller.sh` *(mq30 re-run)* | ~2026-04-20 UTC | ~2026-04-22 22:38 UTC | ~4,299 min (~71.7h) | 61 samples, 10 parallel jobs × 3 threads, Hap 1 reference (986 scaffolds); faster than original run (~120h) due to MQ30 pre-filter reducing input reads |
+| `07_genomicsdb_import.sh` *(mq30 re-run)* | 2026-04-22 22:38 UTC | 2026-04-25 06:44 UTC | ~3,365 min (~56.1h) | GenomicsDBImport: 1,656 min; GenotypeGVCFs: 1,708 min; outputs: genomicsdb workspace + `gymno_hap1.raw.vcf.gz`; original run was ~41h (2,471 min) |
+| `08_filter_snps.sh` *(mq30 re-run)* | 2026-04-25 06:44 UTC | 2026-04-25 07:26 UTC | ~42 min | 15,330,896 biallelic SNPs → 13,710,712 PASS (10.6% removed); original run: 16,021,590 → 13,672,054 PASS (14.7% removed) |
 
 **Script 08 filter failure summary** (sites failing each filter; sites can fail multiple filters):
 

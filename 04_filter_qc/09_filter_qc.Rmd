@@ -100,7 +100,7 @@ scp nlove@10.2.0.53:~/kct_genomics/output_files/gatk_filter_hap1/bcftools_stats_
 
 ---
 
-# Setup
+# Step 1 Setup
 
 ```{r setup, message=FALSE, warning=FALSE}
 library(here)
